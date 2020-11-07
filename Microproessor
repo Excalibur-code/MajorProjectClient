@@ -1,0 +1,93 @@
+unsignedinti,j;
+unsigned char temp[]=" ",txt[]=" ";
+unsigned adc_data1,adc_data2;
+unsigned char gps_data[301],gp1[]="1234.1234",gp2[]="1234.1234";
+sbitigni at PORTB4_bit; sbitignid at DDB4_bit;
+// LCD module connections sbit LCD_RS at PORTD6_bit; sbit LCD_EN at PORTD7_bit;
+sbit LCD_D4 at PORTB0_bit; sbit LCD_D5 at PORTB1_bit; sbit LCD_D6 at PORTB2_bit; sbit LCD_D7 at PORTB3_bit;
+sbitLCD_RS_Direction at DDD6_bit; sbitLCD_EN_Direction at DDD7_bit; sbit LCD_D4_Direction at DDB0_bit; sbit LCD_D5_Direction at DDB1_bit; sbit LCD_D6_Direction at DDB2_bit; sbit LCD_D7_Direction at DDB3_bit;
+voidgps()
+{ for(i=0;i<300;i++)
+{
+while (UART1_Data_Ready() != 1);
+{ gps_data[i]=Uart1_Read();
+} }
+for(i=0;i<300;i++)
+{
+if(gps_data[i]=='$') {
+if(gps_data[i+1]=='G' &&gps_data[i+2]=='P' &&gps_data[i+3]=='R') {
+i=i--; i=i+21;//CHNGED
+for(j=0;j<9;j++) gp1[j]=gps_data[i+j];
+Uart1_Write_Text("\r\n");
+Delay_ms(2000); i=i+13; //CHENGD
+for(j=0;j<9;j++) gp2[j]=gps_data[i+j];
+}
+}
+}
+Uart1_Write_Text("AT\r\n"); delay_ms(2000); // 2 sec delay
+Uart1_Write_Text("ATE0\r\n"); delay_ms(2000);
+Uart1_Write_Text("AT+CMGF=1\r\n"); delay_ms(2000);
+Uart1_Write_Text("AT+CMGS=\"+918880750868\"\r\n"); delay_ms(2000); // 2 sec delay
+Uart1_Write_Text("Solder Found @"); Delay_ms(20);
+Lcd_Cmd(_LCD_CLEAR); UART1_Write_Text("Lattitude:");
+UART1_Write_Text(gp1); Delay_ms(20);
+UART1_Write_Text("\nLongitude");
+UART1_Write_Text(gp2); Lcd_Out(1,1,gp1); // Write text in first row
+Lcd_Out(2,1,gp2);
+UART1_Write_Text("\nBody Temp:");
+UART1_Write_Text(temp); UART1_Write_Text("\nHeart Rate:"); UART1_Write_Text(txt);
+Delay_ms(2000); Uart1_Write(26);
+Lcd_Out(1,1,"Message Sent ");
+// Lcd_Out(2,1," ");
+Delay_ms(5000); }
+void main()
+{
+ignid=1;
+igni=1;
+Lcd_Init(); Lcd_Cmd(_LCD_CLEAR); Lcd_Cmd(_LCD_CURSOR_OFF);
+Uart1_Init(9600); ADC_Init(); while(1)
+{
+adc_data1=ADC_Read(0);
+// Initialize LCD
+// Clear display
+adc_data1=adc_data1/2.049;//calibrate in degcel temp[0]=(adc_data1/1000);
+adc_data1=adc_data1-(temp[0]*1000); temp[1]=(adc_data1/100);
+adc_data1=adc_data1-(temp[1]*100); temp[2]=(adc_data1/10); temp[3]=(adc_data1%10);
+temp[0]=temp[0]+48; temp[1]=temp[1]+48; temp[2]=temp[2]+48; temp[3]=temp[3]+48;
+Lcd_Cmd(_LCD_CLEAR); Lcd_Out(1,1,"Body Temp in Deg"); Lcd_Out(2,1,temp); Delay_ms(2000); Lcd_Cmd(_LCD_CLEAR);
+Lcd_Out(1,1,"Place Your Fingr"); Lcd_Out(2,1,"for HearBeat ");
+adc_data1=ADC_Read(1); while(adc_data1<512) adc_data1=ADC_Read(1);
+Delay_ms(2000); adc_data1=ADC_Read(1); adc_data1=(adc_data1/20)+40;
+txt[0]=(adc_data1/10)+48; txt[1]=(adc_data1%10)+48; Lcd_Cmd(_LCD_CLEAR); Lcd_Out(1,1,"Heart Beat "); Lcd_Out(2,1,txt); Delay_ms(2000); Lcd_Cmd(_LCD_CLEAR); gps();
+adc_data1=ADC_Read(2); if(adc_data1>512)
+{ for(i=0;i<300;i++)
+{
+while (UART1_Data_Ready() != 1);
+{
+gps_data[i]=Uart1_Read(); }
+}
+for(i=0;i<300;i++) { if(gps_data[i]=='$')
+{
+if(gps_data[i+1]=='G' &&gps_data[i+2]=='P' &&gps_data[i+3]=='R' )
+{
+i=i--;
+i=i+21;//CHNGED for(j=0;j<9;j++)
+gp1[j]=gps_data[i+j];
+Uart1_Write_Text("\r\n"); Delay_ms(2000);
+i=i+13; //CHENGD for(j=0;j<9;j++) gp2[j]=gps_data[i+j];
+} }
+}
+Uart1_Write_Text("AT\r\n"); delay_ms(2000); // 2 sec delay
+Uart1_Write_Text("ATE0\r\n"); delay_ms(2000);
+Uart1_Write_Text("AT+CMGF=1\r\n"); delay_ms(2000);
+Uart1_Write_Text("AT+CMGS=\"+918880750868\"\r\n"); delay_ms(2000); // 2 sec delay
+Uart1_Write_Text("Solder Found in Danger"); Delay_ms(20);
+Lcd_Cmd(_LCD_CLEAR); UART1_Write_Text("Lattitude:");
+UART1_Write_Text(gp1); Delay_ms(20);
+UART1_Write_Text("\nLongitude");
+UART1_Write_Text(gp2); Lcd_Out(1,1,gp1); // Write text in first row
+Lcd_Out(2,1,gp2); Lcd_Out(1,1,"Message Sent "); Lcd_Out(2,1," ");
+Uart1_Write(26); Delay_ms(5000);
+//while(1);
+} }
+}
